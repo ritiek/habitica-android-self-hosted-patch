@@ -8,8 +8,11 @@ RUN apt-get update && \
       wget unzip bash coreutils ca-certificates zip && \
     rm -rf /var/lib/apt/lists/*
 
-# Set JAVA_HOME
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+# Set JAVA_HOME based on architecture
+RUN ARCH=$(dpkg --print-architecture) && \
+    echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-${ARCH}" >> /etc/environment && \
+    ln -sf /usr/lib/jvm/java-17-openjdk-${ARCH} /usr/lib/jvm/java-17-openjdk
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 
 # Install apktool
 RUN wget https://github.com/iBotPeaches/Apktool/releases/download/v2.11.1/apktool_2.11.1.jar -O /usr/local/bin/apktool.jar && \
