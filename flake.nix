@@ -16,6 +16,7 @@
             apksigner
             coreutils
             bash
+            wget
           ];
         };
         packages.default = pkgs.stdenv.mkDerivation {
@@ -33,6 +34,7 @@
                 pkgs.apksigner
                 pkgs.coreutils
                 pkgs.bash
+                pkgs.wget
               ]}
           '';
         };
