@@ -13,8 +13,9 @@ Currently the script hardcodes the link to the habitica-android v4.4 APK in the 
 
 ## Usage
 
-In each of following methods, replace `my-habitica-server.com` with the domain where your personal
-Habitica instance is hosted on.
+All of the following methods seem to currently work only on x86_64 machines at the time of writing.
+In each of them, replace `my-habitica-server.com` with the domain where your personal Habitica
+instance is hosted on.
 
 ### Nix
 
