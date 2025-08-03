@@ -1,39 +1,34 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --apk FILE.apk --to new.hostname"
+  echo "Usage: $0 new.hostname"
+  echo ""
+  echo "  new.hostname  Target hostname to replace habitica.com with"
+  echo ""
+  echo "Example: $0 my-habitica-server.com"
   exit 1
 }
 
-APK=""
-TO=""
+# APK download URL and expected checksum
+APK_URL="https://github.com/HabitRPG/habitica-android/releases/download/4.4/7971.apk"
+EXPECTED_SHA256_CHECKSUM="960a24f9ffeb7258ff628f2ca470c52ac8feb91ed4f7b2540a05400e8b5de2b8"
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --apk)
-      APK="$2"
-      shift 2
-      ;;
-    --to)
-      TO="$2"
-      shift 2
-      ;;
-    *)
-      echo "Unknown option: $1"
-      usage
-      ;;
-  esac
-done
+# Check arguments
+if [[ $# -ne 1 ]]; then
+  usage
+fi
 
-[[ -z "$APK" || -z "$TO" ]] && usage
+TO="$1"
 
 FROM="habitica.com"
-BASENAME="$(basename "$APK" .apk)"
-
+APK_FILENAME="7971.apk"
 BUILD_DIR="build"
+TARGET_DIR="target"
+APK_PATH="$BUILD_DIR/$APK_FILENAME"
+BASENAME="$(basename "$APK_FILENAME" .apk)"
 OUTDIR="$BUILD_DIR/patched_${BASENAME}"
-OUTAPK="$BUILD_DIR/modified_${BASENAME}.apk"
+OUTAPK="$TARGET_DIR/${BASENAME}.apk"
 KEYSTORE="$BUILD_DIR/temp-key.jks"
 
 mkdir -p "$BUILD_DIR"
@@ -54,8 +49,40 @@ if [[ -f "$KEYSTORE" ]]; then
   rm -f "$KEYSTORE"
 fi
 
+# Download APK if it doesn't exist
+if [[ ! -f "$APK_PATH" ]]; then
+  echo "[*] Downloading APK from GitHub..."
+  if command -v wget >/dev/null 2>&1; then
+    wget -c -O "$APK_PATH" "$APK_URL"
+  else
+    echo "Error: wget not found. Please install."
+    exit 1
+  fi
+else
+  echo "[*] APK already exists: $APK_PATH"
+fi
+
+# Verify checksum
+echo "[*] Verifying checksum..."
+if command -v sha256sum >/dev/null 2>&1; then
+  ACTUAL_CHECKSUM=$(sha256sum "$APK_PATH" | cut -d' ' -f1)
+elif command -v shasum >/dev/null 2>&1; then
+  ACTUAL_CHECKSUM=$(shasum -a 256 "$APK_PATH" | cut -d' ' -f1)
+else
+  echo "Error: Neither sha256sum nor shasum found. Cannot verify checksum."
+  exit 1
+fi
+
+if [[ "$ACTUAL_CHECKSUM" != "$EXPECTED_SHA256_CHECKSUM" ]]; then
+  echo "Error: Checksum mismatch!"
+  echo "Expected: $EXPECTED_SHA256_CHECKSUM"
+  echo "Actual:   $ACTUAL_CHECKSUM"
+  exit 1
+fi
+echo "[✓] Checksum verification passed"
+
 echo "[*] Decompiling APK..."
-apktool d "$APK" -o "$OUTDIR" -f > /dev/null
+apktool d "$APK_PATH" -o "$OUTDIR" -f > /dev/null
 
 echo "[*] Replacing '$FROM' with '$TO'..."
 find "$OUTDIR" -type f -exec sed -i "s|$FROM|$TO|g" {} +
