@@ -5,8 +5,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       openjdk-17-jre-headless \
       openjdk-17-jdk-headless \
-      wget unzip bash coreutils ca-certificates \
-      zip lib32stdc++6 lib32z1 libc6-i386 && \
+      wget unzip bash coreutils ca-certificates zip && \
     rm -rf /var/lib/apt/lists/*
 
 # Set JAVA_HOME
